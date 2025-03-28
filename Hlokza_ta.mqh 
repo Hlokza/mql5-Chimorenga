@@ -1,0 +1,230 @@
+//+------------------------------------------------------------------+
+//|                                                    Hlokza_ta.mqh |
+//|                              Copyright 2024, Lehlohonolo Mosoang |
+//|                                           lehlohonolomosoang.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2024, Lehlohonolo Mosoang"
+#property link      "lehlohonolomosoang.com"
+//+------------------------------------------------------------------+
+//| defines                                                          |
+//+------------------------------------------------------------------+
+// #define MacrosHello   "Hello, world!"
+// #define MacrosYear    2010
+//+------------------------------------------------------------------+
+//| DLL imports                                                      |
+//+------------------------------------------------------------------+
+// #import "user32.dll"
+//   int      SendMessageA(int hWnd,int Msg,int wParam,int lParam);
+// #import "my_expert.dll"
+//   int      ExpertRecalculate(int wParam,int lParam);
+// #import
+//+------------------------------------------------------------------+
+//| EX5 imports                                                      |
+//+------------------------------------------------------------------+
+// #import "stdlib.ex5"
+//   string ErrorDescription(int error_code);
+// #import
+//+------------------------------------------------------------------+
+
+   
+//+------------------------------------------------------------------+
+//| Simple Moving Average (SMA)                                      |
+//+------------------------------------------------------------------+
+
+
+double SMA(const double &price[], int len, int shift)
+  {
+   double sum = 0;
+
+   for(int i = shift - len + 1; i <= shift; i++){
+      sum += price[i];
+      }
+   
+   return sum / len;
+  }
+
+  
+  
+//+------------------------------------------------------------------+
+//| Exponential Moving Average (EMA)                                 |
+//+------------------------------------------------------------------+
+double EMA(const double &price[], int len, int shift)
+  {
+   //double ema = price[shift];
+   double ema = price[shift - len +1 ];
+   double k = 2.0 / (len-1);
+   for(int i = shift -len +1 ; i <= shift ; i++) // correct
+      ema = price[i] * k + ema * (1 - k);
+   return ema;
+  }
+  
+ 
+//+------------------------------------------------------------------+
+//| Weighted Moving Average (WMA)                                    |
+//+------------------------------------------------------------------+
+double WMA(const double &price[], int period, int shift)
+  {
+   double weighted_sum = 0, weight = 0;
+   for(int i = 0; i < period; i++)
+     {
+      weighted_sum += price[shift - i] * (period - i);
+      weight += (period - i);
+     }
+   return weighted_sum / weight;
+  }
+  
+/*  
+//+------------------------------------------------------------------+
+//| Smoothed Moving Average (SMMA)                                   |
+//+------------------------------------------------------------------+
+double SMMA(const double &price[], int period, int shift)
+  {
+   double smma = SMA(price, period, shift);
+   for(int i = shift + period; i < shift + period * 2; i++)
+      smma = (smma * (period - 1) + price[i]) / period;
+   return smma;
+  }
+//+------------------------------------------------------------------+
+//| Hull Moving Average (HMA)                                        |
+//+------------------------------------------------------------------+
+double HMA(const double &price[], int period, int shift)
+  {
+   int half = period / 2;
+   int sqrtPeriod = MathSqrt(period);
+   double wma1 = 2 * WMA(price, half, shift);
+   double wma2 = WMA(price, period, shift);
+   double diff[];
+   ArrayResize(diff, ArraySize(price));
+   diff[shift] = wma1 - wma2;
+   return WMA(diff, sqrtPeriod, shift);
+  }
+//+------------------------------------------------------------------+
+//| Kaufman Adaptive Moving Average (KAMA)                           |
+//| Simplified version                                               |
+//+------------------------------------------------------------------+
+double KAMA(const double &price[], int period, int shift)
+  {
+   double fastest = 2.0 / (2 + 1);
+   double slowest = 2.0 / (30 + 1);
+   double direction = MathAbs(price[shift] - price[shift + period]);
+   double volatility = 0;
+   for(int i = shift; i < shift + period; i++)
+      volatility += MathAbs(price[i] - price[i + 1]);
+   double efficiency = direction / volatility;
+   double smoothing = MathPow(efficiency * (fastest - slowest) + slowest, 2);
+   double kama = price[shift];
+   for(int i = shift + 1; i < shift + period; i++)
+      kama = kama + smoothing * (price[i] - kama);
+   return kama;
+  }
+//+------------------------------------------------------------------+
+//| Triangular Moving Average (TMA)                                  |
+//+------------------------------------------------------------------+
+double TMA(const double &price[], int period, int shift)
+  {
+   double temp[];
+   ArrayResize(temp, ArraySize(price));
+   for(int i = 0; i < ArraySize(price); i++)
+      temp[i] = SMA(price, period, i);
+   return SMA(temp, period, shift);
+  }
+//+------------------------------------------------------------------+
+//| Double Exponential Moving Average (DEMA)                         |
+//+------------------------------------------------------------------+
+double DEMA(const double &price[], int period, int shift)
+  {
+   double ema1 = EMA(price, period, shift);
+   double ema2 = EMA(price, period, shift + 1);
+   return 2 * ema1 - ema2;
+  }
+//+------------------------------------------------------------------+
+//| Triple Exponential Moving Average (TEMA)                         |
+//+------------------------------------------------------------------+
+double TEMA(const double &price[], int period, int shift)
+  {
+   double ema1 = EMA(price, period, shift);
+   double ema2 = EMA(price, period, shift + 1);
+   double ema3 = EMA(price, period, shift + 2);
+   return 3 * (ema1 - ema2) + ema3;
+  }
+//+------------------------------------------------------------------+
+//| Linear Regression Moving Average (LSMA)                          |
+//+------------------------------------------------------------------+
+double LSMA(const double &price[], int period, int shift)
+  {
+   double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+   for(int i = 0; i < period; i++)
+     {
+      sumX += i;
+      sumY += price[shift + i];
+      sumXY += i * price[shift + i];
+      sumX2 += i * i;
+     }
+   double slope = (period * sumXY - sumX * sumY) / (period * sumX2 - sumX * sumX);
+   double intercept = (sumY - slope * sumX) / period;
+   return slope * (period - 1) + intercept;
+  }
+//+------------------------------------------------------------------+
+//| Volume Weighted Moving Average (VWMA)                            |
+//+------------------------------------------------------------------+
+double VWMA(const double &price[], const long &volume[], int period, int shift)
+  {
+   double weighted_sum = 0, total_volume = 0;
+   for(int i = 0; i < period; i++)
+     {
+      weighted_sum += price[shift + i] * volume[shift + i];
+      total_volume += volume[shift + i];
+     }
+   return weighted_sum / total_volume;
+  }
+//+------------------------------------------------------------------+
+//| Arnaud Legoux Moving Average (ALMA)                              |
+//+------------------------------------------------------------------+
+double ALMA(const double &price[], int period, int shift, double sigma=6.0, double offset=0.85)
+  {
+   double m = offset * (period - 1);
+   double s = period / sigma;
+   double sum = 0, norm = 0;
+   for(int i = 0; i < period; i++)
+     {
+      double weight = MathExp(-1 * (i - m) * (i - m) / (2 * s * s));
+      sum += price[shift + i] * weight;
+      norm += weight;
+     }
+   return sum / norm;
+  }
+  
+  
+bool IsNewBar(datetime &lastTime)
+{
+   //static datetime lastTime = 0;
+   datetime currentTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+
+   if(currentTime != lastTime)  // means bar #0 changed => old bar closed
+   {
+      lastTime = currentTime;
+      return(true);
+   }
+   return(false);
+}
+
+*/
+
+
+//CopyClose(_Symbol,PERIOD_CURRENT,0,rates_total,close_values);
+void CopyVolume(string symbol, ENUM_TIMEFRAMES period, int startpos, int count, double &target_array[])
+   {
+      ArraySetAsSeries(target_array,true);
+      ArrayResize(target_array,count);
+      
+      for(int i=startpos; i<count;i++)
+        {
+            //target_array[i] = (double) iVolume(symbol,period,i);
+            //target_array[i] = (double) iVolume(symbol,period,i);
+            target_array[i] = iVolume(symbol,period,count - i);
+            //Print("Volume[",i,"] : ",target_array[i]);
+        }
+       // Print("Volume[",count-5,"] : ",target_array[count-5],"  ",iClose(_Symbol,PERIOD_CURRENT,count -5), "   ",iVolume(symbol,period,count -5));
+       //Print("Volume[",5,"] : ",target_array[5],"  ",iClose(_Symbol,PERIOD_CURRENT,5), "   ",iVolume(symbol,period,5));
+        //Print("Copy Volume Completer!!!!!!!!!!!!!!!", iVolume(symbol,period,count - 1));
+   }

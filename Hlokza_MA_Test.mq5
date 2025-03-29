@@ -19,12 +19,12 @@
 #property indicator_color1  clrMediumSpringGreen
 #property indicator_style1  STYLE_SOLID
 #property indicator_width1  1
-/*
+
 #property indicator_label2  "Hlokza sma2"
 #property indicator_type2   DRAW_LINE
 #property indicator_color2  clrYellow
 #property indicator_style2  STYLE_SOLID
-#property indicator_width2  1*/
+#property indicator_width2  1
 
 double sma_Hlokza_Buffer[], sma_Hlokza_10_Buffer[], sma_mq5_Buffer[] ;
 double close_values[];
@@ -45,7 +45,7 @@ int OnInit()
   {
 //--- indicator buffers mapping
 SetIndexBuffer(0,sma_Hlokza_10_Buffer,INDICATOR_DATA);
-//SetIndexBuffer(1,sma_Hlokza_Buffer,INDICATOR_DATA);
+SetIndexBuffer(1,sma_mq5_Buffer,INDICATOR_DATA);
    
  
 //---
@@ -72,7 +72,7 @@ int OnCalculate(const int rates_total,
  
 
 
-  ma1.get_Simple_MA(sma_Hlokza_10_Buffer,ma_length,rates_total,prev_calculated, smooth, ma_type, source, ma_type_smooth);
+  ma1.get_Simple_MA(sma_Hlokza_10_Buffer,sma_mq5_Buffer,ma_length,rates_total,prev_calculated, smooth, ma_type, source, ma_type_smooth);
   //ma1.get_Simple_MA(sma_Hlokza_10_Buffer,10,rates_total,prev_calculated, 0, Simple, Simple);
  
 

@@ -47,8 +47,8 @@ input Price_or_Volume   source = Close;            //Source
 int OnInit()
   {
 //--- indicator buffers mapping
-SetIndexBuffer(0,sma_Hlokza_10_Buffer,INDICATOR_DATA);
-//SetIndexBuffer(1,sma_Hlokza_Buffer,INDICATOR_DATA);
+//SetIndexBuffer(0,sma_Hlokza_10_Buffer,INDICATOR_DATA);
+SetIndexBuffer(0,sma_mq5_Buffer,INDICATOR_DATA);
    
  
 //---
@@ -75,7 +75,7 @@ int OnCalculate(const int rates_total,
  
 
 
-  ma1.get_Simple_MA(sma_Hlokza_10_Buffer,ma_length,rates_total,prev_calculated, smooth, ma_type, source, ma_type_smooth);
+  ma1.get_Simple_MA(sma_Hlokza_10_Buffer,sma_mq5_Buffer,ma_length,rates_total,prev_calculated, smooth, ma_type, source, ma_type_smooth);
   //ma1.get_Simple_MA(sma_Hlokza_10_Buffer,10,rates_total,prev_calculated, 0, Simple, Simple);
  
 

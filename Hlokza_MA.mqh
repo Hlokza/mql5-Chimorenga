@@ -73,72 +73,95 @@ class CMovingAverage
          }*/
          
          
-      void get_Simple_MA(double &simple_ma_Buffer[], int length_input, int rates_total_inp, int prev_calculated_inp, int smooth_length, MA_MODES main_SMA_type, Price_or_Volume price, MA_MODES sub_SMA_type = Simple )
+      void get_Simple_MA(double &simple_ma_Buffer[], double &simple_osscilator_Buffer[], int length_input, int rates_total_inp, int prev_calculated_inp, int smooth_length, MA_MODES main_SMA_type, Price_or_Volume price, MA_MODES sub_SMA_type = Simple )
          {  
+            //double simple_ma[];
+            double high_ma[], low_ma[];
+            double high_val_temp, low_val_temp;
+            int count;
+            
             Init(rates_total_inp,prev_calculated_inp, price);
             ArrayResize(simple_ma_Buffer,rates_total);
             ArrayResize(simple_ma,rates_total);
+            ArrayResize(high_ma,rates_total);
+            ArrayResize(low_ma,rates_total);
             
-            if(main_SMA_type == Simple)
+            high_val_temp = 0;
+            low_val_temp = 0;
+            
+            double high_next_val_temp = 0;
+            double low_next_val_temp = 0;
+            int count_high = 0;
+            int count_low = 0;
+            //I'm bringing them all togather at once
+            //==============================
+            
+              
+              
+              
+            if(smooth_length > 0)
               {
-                  if(smooth_length > 0)
-                    {
-                     for(int i=length_input;i<rates_total;i++)
-                        {
-                           simple_ma[i]  = SMA(close_values,length_input,i);
-                        }
-                        smooth_ma_func(simple_ma,smooth_length, sub_SMA_type,rates_total_inp, simple_ma_Buffer);
-                        
-                    }
-                  else
-                    {
-                     for(int i=length_input;i<rates_total;i++)
-                        {
-                           simple_ma_Buffer[i] = SMA(close_values,length_input,i);
-                        }
-                    }
-               
+               for(int i=length_input;i<rates_total;i++)
+                  {
+                     simple_ma[i]  = run_moving_average_type(close_values,length_input,i, main_SMA_type);
+                  }
+                  smooth_ma_func(simple_ma,smooth_length, sub_SMA_type,rates_total_inp, simple_ma_Buffer);
+                  
               }
-              else if(main_SMA_type == Exponential)
-                     {
-                        if(smooth_length > 0)
-                          {
-                           for(int i=length_input;i<rates_total;i++)
-                              {
-                                 simple_ma[i]  = EMA(close_values,length_input,i);
-                              }
-                          smooth_ma_func(simple_ma,smooth_length, sub_SMA_type,rates_total_inp, simple_ma_Buffer);
-                              
-                          }
-                        else
-                          {
-                           for(int i=length_input;i<rates_total;i++)
-                              {
-                                 simple_ma_Buffer[i] = EMA(close_values,length_input,i);
-                              }
-                          }
-                      
-                     }
-              else if(main_SMA_type == Weighted)
-                    {
-                        if(smooth_length > 0)
-                          {
-                           for(int i=length_input;i<rates_total;i++)
-                              {
-                                 simple_ma[i]  = WMA(close_values,length_input,i);
-                              }
-                              
-                          smooth_ma_func(simple_ma,smooth_length, sub_SMA_type,rates_total_inp, simple_ma_Buffer);
-                              
-                          }
-                        else
-                          {
-                           for(int i=length_input;i<rates_total;i++)
-                              {
-                                 simple_ma_Buffer[i] = WMA(close_values,length_input,i);
-                              }
-                          }                     
-                    }
+            else
+              {
+               for(int i=length_input;i<rates_total;i++)
+                  {
+                     simple_ma_Buffer[i] = run_moving_average_type(close_values,length_input,i, main_SMA_type);
+                     
+                     //Create stochastic
+                     if(i > length_input)
+                       {
+                           high_val_temp = simple_ma_Buffer[i] > high_val_temp ? simple_ma_Buffer[i] : high_val_temp ;
+                           low_val_temp = (simple_ma_Buffer[i] < low_val_temp) || low_val_temp == 0 ? simple_ma_Buffer[i] : low_val_temp ;
+                           
+                           if(count_high > 0)//count > 0
+                             {
+                                 high_next_val_temp = simple_ma_Buffer[i] > high_next_val_temp ? simple_ma_Buffer[i] : high_next_val_temp ;
+                                 low_next_val_temp = (simple_ma_Buffer[i] < low_next_val_temp) || low_val_temp == 0  ? simple_ma_Buffer[i] : low_next_val_temp ;
+                             }
+                           
+                           
+                           high_ma[i] = high_val_temp;
+                           //simple_osscilator_Buffer[i] = high_val_temp; //for testing high an low lines
+                           low_ma[i] = low_val_temp;
+                           simple_osscilator_Buffer[i] = (simple_ma_Buffer[i]-low_ma[i])/(high_ma[i]-low_ma[i]) *100;
+                           count_high = count_high + 1;
+                           count_low = count_low +1;
+                       }
+                       
+                      //reset count
+                      if(count_high == length_input || high_val_temp == high_next_val_temp)
+                        {
+                         
+                         if(count_high == length_input)
+                           {
+                            count_high = 0;
+                           }
+                         high_val_temp = high_next_val_temp;
+                         high_next_val_temp = simple_ma_Buffer[i];
+                        }
+                        
+                      if(count_low == length_input || low_val_temp == low_next_val_temp)
+                        {
+                         
+                         if(count_low == length_input)
+                           {
+                              count_low = 0;
+                           }
+                         low_val_temp = low_next_val_temp;
+                         low_next_val_temp = simple_ma_Buffer[i];
+                        }
+                     
+                  }
+                  
+              }
+            //==============================
             
             
             
@@ -162,6 +185,7 @@ class CMovingAverage
 
    }*/
 };
+
 
 
 
@@ -189,4 +213,26 @@ void smooth_ma_func(const double &source_ma[], int smooth_length, MA_MODES sub_S
                   target_ma[i]  = SMA(source_ma,smooth_length,i);
                }
         }
+   }
+   
+  
+double run_moving_average_type(const double &price[], int len, int shift, MA_MODES ma_type)
+   {
+      //double ma
+      if(ma_type == Simple)
+        {
+         return SMA(price,len,shift);
+        }
+        
+      if(ma_type == Exponential)
+        {
+         return EMA(price,len,shift);
+        }
+      
+      if(ma_type == Weighted)
+        {
+         return WMA(price,len,shift);
+        }
+        
+      return 0;
    }
